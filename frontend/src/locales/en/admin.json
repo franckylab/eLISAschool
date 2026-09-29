@@ -1077,36 +1077,13 @@
             "erreurChargement": "Schools unavailable",
             "erreurChargementDetail": "The school list could not be loaded."
         },
-        "sansDescription": "No description",
-        "configuration": "Configuration",
-        "modalCreate": {
-            "titre": "New group"
-        },
-        "meta": {
-            "groupes": "Groups",
-            "membres": "Members"
-        },
         "statut": {
             "actif": "Active",
             "inactif": "Inactive"
         },
         "actions": {
-            "configurer": "Configure",
-            "modifier": "Edit",
             "supprimer": "Deactivate"
         },
-        "filtres": {
-            "statut": "Status",
-            "tous": "All groups",
-            "actifs": "Active only",
-            "inactifs": "Inactive only"
-        },
-        "rechercherPlaceholder": "Search by name, code or description…",
-        "aucunResultat": "No group matches the search",
-        "aucunResultatDetail": "Adjust the criteria or clear the search to see all groups.",
-        "effacerRecherche": "Clear search",
-        "vide": "No group configured",
-        "videDescription": "Create your first group to share plans, modules and billing.",
         "erreurChargement": "Loading failed",
         "erreurChargementDetail": "Groups could not be loaded. Check your connection and retry.",
         "tabs": {
@@ -1138,12 +1115,10 @@
         },
         "supprimer": {
             "titre": "Deactivate this group?",
-            "message": "Deactivate \"{{nom}}\"? Schools will be released and billing suspended.",
-            "details": "Soft delete: module overrides are kept for a possible restore.",
-            "confirmer": "Deactivate"
+            "details": "Soft delete: module overrides are kept for a possible restore."
         },
         "aucunMembre": "No members in this group",
-        "aucunePromotion": "No active PLAN promotion right now",
+        "aucunePromotion": "No promotions assigned to this group",
         "modules": {
             "compteur": "{{actifs}} / {{total}} active modules",
             "rechercher": "Search a module…",
@@ -1155,10 +1130,6 @@
             "erreurChargementDetail": "Catalogue or overrides could not be loaded."
         },
         "promotions": {
-            "code": "Code",
-            "nom": "Name",
-            "valeur": "Value",
-            "scope": "Scope",
             "gerer": "Manage promotions",
             "notePerimetre": "GROUPE-scope promotions: applied as a REMISE line on each member’s individual invoice (independent 40% cap). Assignment uses the multi-group list, untouched for other groups.",
             "erreurChargement": "Promotions unavailable",
@@ -1168,7 +1139,8 @@
             "assigner": "Assign",
             "retirer": "Remove",
             "exclusif": "Exclusive",
-            "aucuneGroupe": "No GROUPE-scope promotion — create one in Promotions & Discounts."
+            "aucuneGroupe": "No GROUPE-scope promotion — create one in Promotions & Discounts.",
+            "gratuite": "Free"
         },
         "vueConsolidee": {
             "titre": "Consolidated view — {{nom}}",
@@ -1177,20 +1149,14 @@
             "erreurChargement": "Unable to load statistics",
             "erreurChargementDetail": "Consolidated statistics could not be loaded. Check your connection and retry.",
             "aucuneDonnee": "No data available for this group",
-            "actualiser": "Refresh",
             "export": {
-                "csv": "CSV",
-                "pdf": "PDF",
-                "format": "Format",
                 "bouton": "Export"
             },
             "kpi": {
                 "facturesMois": "Invoices this month",
                 "montantHT": "HT Amount",
                 "economieMois": "Monthly savings",
-                "economieLabel": "vs without tiered pricing",
-                "degressivite": "Tiered pricing",
-                "degressiviteLabel": "applied automatically"
+                "degressivite": "Tiered pricing"
             },
             "degressivite": {
                 "titre": "Tiered pricing applied",
@@ -1201,7 +1167,6 @@
             },
             "repartition": {
                 "titre": "Breakdown by plan",
-                "plan": "Plan",
                 "membres": "members"
             },
             "facturesRecentes": {
@@ -1217,7 +1182,17 @@
             },
             "note": {
                 "titre": "Important note",
-                "description": "Tiered pricing is applied automatically on each individual invoice of the group's schools. This view is read-only — configuration is done via the group subscription."
+                "description": "Degressivity is applied automatically on each member school's individual invoice. This view is read-only — configuration happens in the Scales tab."
+            },
+            "statuts": {
+                "PAYEE": "Paid",
+                "EN_RETARD": "Overdue",
+                "EMISE": "Issued",
+                "PARTIELLEMENT_PAYEE": "Partially paid",
+                "BROUILLON": "Draft",
+                "ANNULEE": "Cancelled",
+                "EN_PAIEMENT": "Processing",
+                "AVOIR": "Credit note"
             }
         },
         "toast": {
@@ -1227,32 +1202,21 @@
             "membreAjoute": "Member added",
             "membreRetire": "Member removed",
             "moduleMaj": "Module updated",
-            "abonnementMaj": "Subscription saved",
-            "abonnementSuspendu": "Subscription suspended",
-            "abonnementReactive": "Subscription reactivated",
             "erreurCreation": "Error during creation",
             "erreurMaj": "Error during update",
             "erreurSuppression": "Error during deactivation",
             "erreurMembre": "Member operation failed",
             "erreurModule": "Module update failed",
-            "erreurAbonnement": "Subscription save failed",
             "promoAssignee": "Promotion assigned to the group",
             "promoRetiree": "Promotion removed from the group",
             "erreurPromo": "Promotion operation failed",
             "baremesMaj": "Scales saved",
             "baremesReinitialises": "Back to global values",
             "baremesRestaures": "Version restored",
-            "erreurBaremes": "Scale save failed"
+            "erreurBaremes": "Scale save failed",
+            "reactive": "Group(s) reactivated",
+            "desactive": "Group(s) deactivated"
         },
-        "facturation": {
-            "individuelle": "Individual",
-            "consolidee": "Consolidated",
-            "hybride": "Hybrid",
-            "degressivite": "Tiered Discount",
-            "repartition": "Pro-rata Distribution"
-        },
-        "degressivite": "tiered discount",
-        "sansRemise": "No discount",
         "baremes": {
             "effectives": "Effective values for this group",
             "paliers": "Tiered discount scale",
@@ -1282,7 +1246,6 @@
             "historiqueVide": "No recorded change.",
             "restaurer": "Restore",
             "confirmerGlobalTitre": "Apply global values?",
-            "confirmerGlobalMessage": "{{count}} group(s) with 2+ members affected — plus every standalone school for the PLAN cap.",
             "confirmerResetTitre": "Back to global values?",
             "confirmerResetMessage": "Overrides of “{{nom}}” will be deleted. The next invoice will use the global scale.",
             "confirmerRestaurerTitre": "Restore this version?",
@@ -1302,6 +1265,70 @@
             "globalesLectureSeule": "Global values are edited in the “Global scales & caps” section of the Groups page.",
             "modifierGlobaux": "Edit",
             "confirmerGlobalMessageComplet": "{{count}} group(s) with 2+ members affected — plus every standalone school for the PLAN cap, which applies platform-wide."
+        },
+        "activer": "Activate",
+        "desactiver": "Deactivate",
+        "activerTitre": "Reactivate this group",
+        "desactiverTitre": "Deactivate this group",
+        "activerDetails": "The group will be able to welcome members again.",
+        "desactiverDetails": "The group will release its members.",
+        "precedent": "Previous",
+        "suivant": "Next",
+        "exporter": "Export CSV",
+        "membresLabel": "members",
+        "colonnes": {
+            "nom": "Group",
+            "code": "Code",
+            "membres": "Members",
+            "statut": "Status",
+            "remise": "Discount"
+        },
+        "stats": {
+            "total": "Total",
+            "actifs": "Active",
+            "membres": "Members",
+            "avecRemise": "With discount"
+        },
+        "filtresRapides": {
+            "tous": "All",
+            "actifs": "Active",
+            "inactifs": "Inactive",
+            "avecRemise": "With discount",
+            "sansRemise": "Without discount"
+        },
+        "tri": {
+            "nom": "Name",
+            "code": "Code",
+            "membres": "Members",
+            "remise": "Discount",
+            "statut": "Status",
+            "date": "Creation date",
+            "croissant": "Ascending",
+            "decroissant": "Descending",
+            "titre": "Sort by"
+        },
+        "filtres": {
+            "resultats": "{{count}} result(s)",
+            "effacer": "Clear"
+        },
+        "bulk": {
+            "selectionnes": "{{count}} selected",
+            "effacerSelection": "Clear selection"
+        },
+        "recherche": {
+            "table": "Search by name, code or description…"
+        },
+        "table": {
+            "aucunResultat": "No group matches the search",
+            "vide": "No group configured"
+        },
+        "sansRemise": "Without discount",
+        "tabsDesc": {
+            "membres": "Schools attached to the group",
+            "modules": "Module overrides applied to members",
+            "promotions": "GROUP promotions assigned to the group",
+            "consolidee": "Read-only financial summary",
+            "baremes": "Tiered discount levels and effective caps"
         }
     },
     "onboarding": {

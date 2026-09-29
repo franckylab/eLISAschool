@@ -17,27 +17,34 @@ import { Badge } from '@/components/ui/Badge';
 import { formatRelative } from '@/lib/date-utils';
 import { useGroupesStats } from '../use-groupes-saas';
 
+/** Libellés localisés des statuts de facture (source unique de l'onglet). */
+function useStatutFactureLabel(): (statut: string) => string {
+    const { t } = useTranslation('admin');
+    return (statut) => t(`groupes.vueConsolidee.statuts.${statut}`, statut.replace(/_/g, ' '));
+}
+
 export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: string; code: string } }) {
     const { t } = useTranslation('admin');
+    const statutLabel = useStatutFactureLabel();
 
-    const { data: stats, isLoading, isError, error, refetch } = useGroupesStats(groupe.id);
+    const { data: stats, isLoading, isFetching, isError, error, refetch } = useGroupesStats(groupe.id);
 
     const handleExportCSV = () => {
         if (!stats) return;
         const echapper = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
         const lignes = [
-            `# ${t('groupes.vueConsolidee.titre', { nom: groupe.nom })} — ${new Date().toLocaleDateString('fr-FR')}`,
-            `${t('groupes.vueConsolidee.kpi.facturesMois')};${stats.facturesMois}`,
-            `${t('groupes.vueConsolidee.kpi.montantHT')};${stats.montantTotalHT}`,
-            `${t('groupes.vueConsolidee.kpi.economieMois')};${stats.economieMois}`,
-            `${t('groupes.vueConsolidee.kpi.degressivite')};${stats.degressivite}%`,
+            `# ${t('groupes.vueConsolidee.titre', 'Vue consolidée — {{nom}}', { nom: groupe.nom })} — ${new Date().toLocaleDateString('fr-FR')}`,
+            `${t('groupes.vueConsolidee.kpi.facturesMois', 'Factures ce mois')};${stats.facturesMois}`,
+            `${t('groupes.vueConsolidee.kpi.montantHT', 'Montant HT')};${stats.montantTotalHT}`,
+            `${t('groupes.vueConsolidee.kpi.economieMois', 'Économie du mois')};${stats.economieMois}`,
+            `${t('groupes.vueConsolidee.kpi.degressivite', 'Dégressivité')};${stats.degressivite}%`,
             '',
             [
-                t('groupes.vueConsolidee.facturesRecentes.colonnes.numero'),
-                t('groupes.vueConsolidee.facturesRecentes.colonnes.etablissement'),
-                t('groupes.vueConsolidee.facturesRecentes.colonnes.date'),
-                t('groupes.vueConsolidee.facturesRecentes.colonnes.montant'),
-                t('groupes.vueConsolidee.facturesRecentes.colonnes.statut'),
+                t('groupes.vueConsolidee.facturesRecentes.colonnes.numero', 'N°'),
+                t('groupes.vueConsolidee.facturesRecentes.colonnes.etablissement', 'Établissement'),
+                t('groupes.vueConsolidee.facturesRecentes.colonnes.date', 'Date'),
+                t('groupes.vueConsolidee.facturesRecentes.colonnes.montant', 'Montant'),
+                t('groupes.vueConsolidee.facturesRecentes.colonnes.statut', 'Statut'),
             ].join(';'),
             ...(stats.facturesRecentes ?? []).map((f) =>
                 [f.numero, f.etablissement, f.date, f.montant, f.statut].map(echapper).join(';'),
@@ -55,7 +62,7 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
     if (isLoading) {
         return (
             <div className="flex justify-center py-8">
-                <SchoolLoading variant="compact" message={t('groupes.vueConsolidee.chargement')} />
+                <SchoolLoading variant="compact" message={t('groupes.vueConsolidee.chargement', 'Chargement…')} />
             </div>
         );
     }
@@ -63,10 +70,10 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
     if (isError) {
         return (
             <ErrorMessage
-                title={t('groupes.vueConsolidee.erreurChargement')}
-                message={error?.message ?? t('groupes.vueConsolidee.erreurChargementDetail')}
+                title={t('groupes.vueConsolidee.erreurChargement', 'Chargement impossible')}
+                message={error?.message ?? t('groupes.vueConsolidee.erreurChargementDetail', 'Erreur')}
                 onRetry={() => refetch()}
-                retryLabel={t('groupes.reessayer')}
+                retryLabel={t('groupes.reessayer', 'Réessayer')}
             />
         );
     }
@@ -75,25 +82,25 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
         return (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
                 <BarChart3 className="h-[var(--icon-lg)] w-[var(--icon-lg)] text-[var(--color-texte-muted)]" aria-hidden />
-                <p className="text-sm text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.aucuneDonnee')}</p>
+                <p className="text-sm text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.aucuneDonnee', 'Aucune donnée')}</p>
             </div>
         );
     }
 
     const degressivitePct = stats.degressivite;
-    const degressiviteColor = degressivitePct === 0 ? 'muted' : degressivitePct <= 10 ? 'info' : degressivitePct <= 20 ? 'success' : 'warning';
+    const degressiviteTone = degressivitePct === 0 ? 'muted' : degressivitePct <= 10 ? 'accent' : degressivitePct <= 20 ? 'success' : 'warning';
 
     return (
         <div className="flex flex-col gap-[var(--gap-md)]">
             {/* En-tête avec actions */}
             <div className="flex flex-col gap-[var(--gap-sm)] sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h3 className="text-[var(--text-lg)] font-semibold flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 font-semibold" style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}>
                         <BarChart3 className="h-[var(--icon-md)] w-[var(--icon-md)] text-[var(--color-dominante)]" aria-hidden />
-                        {t('groupes.vueConsolidee.titre', { nom: groupe.nom })}
+                        {t('groupes.vueConsolidee.titre', 'Vue consolidée')}
                     </h3>
                     <p className="text-sm text-[var(--color-texte-secondaire)]">
-                        {t('groupes.vueConsolidee.sousTitre', { code: groupe.code })}
+                        {t('groupes.vueConsolidee.sousTitre', 'Groupe {{code}} — {{nom}}', { code: groupe.code, nom: groupe.nom })}
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -103,16 +110,16 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
                         onClick={handleExportCSV}
                         icon={<Download className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                     >
-                        {t('groupes.vueConsolidee.export.bouton')}
+                        {t('groupes.vueConsolidee.export.bouton', 'Exporter')}
                     </ElisaButton>
                     <ElisaButton
                         variant="outline"
                         size="sm"
                         onClick={() => refetch()}
-                        isLoading={isLoading}
+                        isLoading={isFetching}
                         icon={<RefreshCw className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
                     >
-                        {t('groupes.actualiser')}
+                        {t('groupes.actualiser', 'Actualiser')}
                     </ElisaButton>
                 </div>
             </div>
@@ -121,56 +128,54 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
             <div className="grid grid-cols-1 gap-[var(--gap-md)] sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     icon={FileText}
-                    label={t('groupes.vueConsolidee.kpi.facturesMois')}
+                    label={t('groupes.vueConsolidee.kpi.facturesMois', 'Factures ce mois')}
                     value={stats.facturesMois}
                     tone="accent"
                 />
                 <StatCard
                     icon={CreditCard}
-                    label={t('groupes.vueConsolidee.kpi.montantHT')}
+                    label={t('groupes.vueConsolidee.kpi.montantHT', 'Montant HT')}
                     value={`${stats.montantTotalHT.toLocaleString('fr-FR')} F`}
                     tone="dominant"
                 />
                 <StatCard
                     icon={Calculator}
-                    label={t('groupes.vueConsolidee.kpi.economieMois')}
+                    label={t('groupes.vueConsolidee.kpi.economieMois', 'Économie du mois')}
                     value={`${stats.economieMois.toLocaleString('fr-FR')} F`}
                     tone="success"
-                    trend={{ value: stats.economieMois, isPositive: true }}
                 />
                 <StatCard
                     icon={TrendingUp}
-                    label={t('groupes.vueConsolidee.kpi.degressivite')}
+                    label={t('groupes.vueConsolidee.kpi.degressivite', 'Dégressivité')}
                     value={`${degressivitePct}%`}
-                    tone={degressiviteColor}
-                    trend={{ value: degressivitePct, isPositive: degressivitePct > 0 }}
+                    tone={degressiviteTone}
                 />
             </div>
 
             {/* Détail dégressivité */}
             <div className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)]">
-                <h4 className="text-[var(--text-base)] font-semibold mb-[var(--space-sm)] flex items-center gap-2">
+                <h4 className="font-semibold mb-[var(--space-sm)] flex items-center gap-2" style={{ fontSize: 'clamp(0.875rem, 0.82rem + 0.25vw, 1rem)' }}>
                     <Calculator className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominante)]" aria-hidden />
-                    {t('groupes.vueConsolidee.degressivite.titre')}
+                    {t('groupes.vueConsolidee.degressivite.titre', 'Dégressivité appliquée')}
                 </h4>
                 <p className="text-sm text-[var(--color-texte-secondaire)] mb-[var(--space-sm)]">
-                    {t('groupes.vueConsolidee.degressivite.description', { 
+                    {t('groupes.vueConsolidee.degressivite.description', 'Groupe de {{nombreMembres}} membre(s) → dégressivité de {{degressivite}}%', {
                         nombreMembres: stats.repartitionParPlan?.reduce((a, b) => a + b.count, 0) ?? 0,
-                        degressivite: degressivitePct 
+                        degressivite: degressivitePct
                     })}
                 </p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 text-sm">
                     <div className="flex justify-between py-2 px-3 rounded-lg bg-[var(--color-surface-hover)]">
-                        <span className="text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.degressivite.montantAvant')}</span>
+                        <span className="text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.degressivite.montantAvant', 'Montant avant dégressivité')}</span>
                         <span className="font-semibold text-[var(--color-texte)]">{stats.montantTotalHT.toLocaleString('fr-FR')} F</span>
                     </div>
-                    <div className="flex justify-between py-2 px-3 rounded-lg bg-[var(--color-success)]/10 text-success">
-                        <span className="text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.degressivite.economie')}</span>
-                        <span className="font-semibold">{stats.economieMois.toLocaleString('fr-FR')} F</span>
+                    <div className="flex justify-between py-2 px-3 rounded-lg bg-[var(--color-success)]/10">
+                        <span className="text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.degressivite.economie', 'Économie réalisée')}</span>
+                        <span className="font-semibold text-[var(--color-success)]">{stats.economieMois.toLocaleString('fr-FR')} F</span>
                     </div>
-                    <div className="flex justify-between py-2 px-3 rounded-lg bg-[var(--color-dominante)]/10 text-dominant">
-                        <span className="text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.degressivite.montantApres')}</span>
-                        <span className="font-semibold text-[var(--color-texte)]">{(stats.montantTotalHT - stats.economieMois).toLocaleString('fr-FR')} F</span>
+                    <div className="flex justify-between py-2 px-3 rounded-lg bg-[var(--color-dominante)]/10">
+                        <span className="text-[var(--color-texte-secondaire)]">{t('groupes.vueConsolidee.degressivite.montantApres', 'Montant après dégressivité')}</span>
+                        <span className="font-semibold text-[var(--color-dominante)]">{(stats.montantTotalHT - stats.economieMois).toLocaleString('fr-FR')} F</span>
                     </div>
                 </div>
             </div>
@@ -178,15 +183,15 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
             {/* Répartition par plan */}
             {stats.repartitionParPlan?.length && (
                 <div className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)]">
-                    <h4 className="text-[var(--text-base)] font-semibold mb-[var(--space-sm)] flex items-center gap-2">
+                    <h4 className="font-semibold mb-[var(--space-sm)] flex items-center gap-2" style={{ fontSize: 'clamp(0.875rem, 0.82rem + 0.25vw, 1rem)' }}>
                         <CreditCard className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominante)]" aria-hidden />
-                        {t('groupes.vueConsolidee.repartition.titre')}
+                        {t('groupes.vueConsolidee.repartition.titre', 'Répartition par plan')}
                     </h4>
                     <div className="space-y-2">
                         {stats.repartitionParPlan.map((item) => (
                             <div key={item.plan} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-surface-hover)]">
                                 <span className="text-sm font-medium text-[var(--color-texte)]">{item.plan}</span>
-                                <Badge variant="default" size="sm">{item.count} {t('groupes.membres')}</Badge>
+                                <Badge variant="default" size="sm">{item.count} {t('groupes.vueConsolidee.repartition.membres', 'membres')}</Badge>
                             </div>
                         ))}
                     </div>
@@ -197,20 +202,20 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
             {stats.facturesRecentes?.length && (
                 <div className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)]">
                     <div className="flex items-center justify-between mb-[var(--space-sm)]">
-                        <h4 className="text-[var(--text-base)] font-semibold flex items-center gap-2">
+                        <h4 className="font-semibold flex items-center gap-2" style={{ fontSize: 'clamp(0.875rem, 0.82rem + 0.25vw, 1rem)' }}>
                             <FileText className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominante)]" aria-hidden />
-                            {t('groupes.vueConsolidee.facturesRecentes.titre')}
+                            {t('groupes.vueConsolidee.facturesRecentes.titre', 'Factures récentes')}
                         </h4>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="text-left text-[var(--color-texte-muted)] border-b border-[var(--color-bordure)]">
-                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.numero')}</th>
-                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.etablissement')}</th>
-                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.date')}</th>
-                                    <th className="pb-2 px-3 font-medium text-right">{t('groupes.vueConsolidee.facturesRecentes.colonnes.montant')}</th>
-                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.statut')}</th>
+                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.numero', 'N°')}</th>
+                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.etablissement', 'Établissement')}</th>
+                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.date', 'Date')}</th>
+                                    <th className="pb-2 px-3 font-medium text-right">{t('groupes.vueConsolidee.facturesRecentes.colonnes.montant', 'Montant')}</th>
+                                    <th className="pb-2 px-3 font-medium">{t('groupes.vueConsolidee.facturesRecentes.colonnes.statut', 'Statut')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--color-bordure)]/50">
@@ -227,7 +232,7 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
                                                 f.statut === 'EMISE' ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]' :
                                                 'bg-[var(--color-texte-muted)]/10 text-[var(--color-texte-muted)]'
                                             }`}>
-                                                {f.statut}
+                                                {statutLabel(f.statut)}
                                             </span>
                                         </td>
                                     </tr>
@@ -237,7 +242,7 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
                     </div>
                     {stats.facturesRecentes.length > 10 && (
                         <p className="mt-3 text-xs text-[var(--color-texte-muted)] text-center">
-                            {t('groupes.vueConsolidee.facturesRecentes.etAutres', { count: stats.facturesRecentes.length - 10 })}
+                            {t('groupes.vueConsolidee.facturesRecentes.etAutres', '+ {{count}} autres', { count: stats.facturesRecentes.length - 10 })}
                         </p>
                     )}
                 </div>
@@ -246,8 +251,8 @@ export function ConsolidatedViewTab({ groupe }: { groupe: { id: string; nom: str
             {/* Note explicative */}
             <div className="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-[var(--space-md)]">
                 <p className="text-sm text-[var(--color-texte-secondaire)]">
-                    <strong className="text-[var(--color-accent)]">{t('groupes.vueConsolidee.note.titre')} :</strong>
-                    {' '}{t('groupes.vueConsolidee.note.description')}
+                    <strong className="text-[var(--color-accent)]">{t('groupes.vueConsolidee.note.titre', 'Note importante')} :</strong>
+                    {' '}{t('groupes.vueConsolidee.note.description', 'La dégressivité est appliquée automatiquement.')}
                 </p>
             </div>
         </div>

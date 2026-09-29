@@ -44,7 +44,6 @@ export { RevenusDashboard } from './components/revenus-dashboard';
 // =============================================
 // Composants — Groupes SaaS
 // =============================================
-export { default as GroupesSaaSPage } from './components/groupes-saas-page';
 export * from './groupes';
 
 // =============================================

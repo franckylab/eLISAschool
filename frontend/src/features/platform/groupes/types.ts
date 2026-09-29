@@ -54,15 +54,6 @@ export interface ModuleGroupeOverride {
 
 export type GroupeTabId = 'membres' | 'modules' | 'promotions' | 'consolidee' | 'baremes';
 
-export interface PromotionApercu {
-    id: string;
-    code: string;
-    nom: string;
-    typePromotion: 'POURCENTAGE' | 'MONTANT_FIXE' | 'GRATUITE';
-    valeur: number;
-    scope: 'PLAN' | 'PACK' | 'MODULE' | 'QUOTA' | 'GRATUITE';
-}
-
 export interface GroupeFormValues {
     nom: string;
     code: string;

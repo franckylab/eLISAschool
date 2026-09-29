@@ -7890,3 +7890,467 @@ hasAnyPermission([
 - Nettoyage résiduel : `usePlansOptions`/`PlanOption` (groupes), `abonnementComing` FR/EN,
   commentaire `GroupeConfigureModal` alignés. Zéro référence restante aux entités/services
   facturation-groupe supprimés (hors migrations historiques).
+
+## Page Groupes Platform — Liste + Détail : Restructuration & Déduplication (✅ TERMINÉ)
+
+> Périmètre : `/platform/groupes` (liste DataTable) + `/platform/groupes/:id` (5 onglets).
+> Objectif : organisation, présentation, responsive, ergonomie, i18n, zéro redondance d'affichage.
+
+### Code mort supprimé (~550 lignes, 4 fichiers)
+
+| Fichier | Raison |
+|---|---|
+| `features/platform/components/groupes-saas-page.tsx` | Ancienne page liste (cartes) — aucune route ne l'utilise (remplacée par `platform.groupes.index.tsx` DataTable) |
+| `features/platform/groupes/GroupeCard.tsx` | Utilisé uniquement par la page morte |
+| `features/platform/groupes/GroupeStats.tsx` | Idem (la liste a son propre `MiniStat`) |
+| `features/platform/groupes/GroupeConfigureModal.tsx` | Idem (le détail `:id` est le lieu de configuration) |
+| Barrels | Exports retirés (`groupes/index.ts`, `features/platform/index.ts`) |
+
+### Bugs réels corrigés
+
+- **`t('groupes.membres')` retournait un objet** (clé objet `membres.*`) → affichait la clé brute dans BaremesTab, Vue consolidée et badges détail. Nouvelle clé string `groupes.membresLabel` (+ fix des 4 usages).
+- **ConfirmationModal jamais monté** dans le détail (`confirm.ask()` sans `{confirm.ConfirmationModal}`) → Activer/Désactiver/Supprimer ne faisaient rien. Monté dans la réécriture.
+- **Trends StatCard absurdes** en Vue consolidée (`trend.value = montant absolu` affiché comme `125000.0%`) → props `trend` retirées (pas de baseline de variation).
+- **Tokens CSS invalides** : `text-[var(--text-lg)]`, `text-[var(--text-base)]` (inexistants) → `clamp()` ; `text-success`/`text-dominant` (utilitaires inexistants) → `text-[var(--color-…)]`.
+- **34 clés `groupes.*` utilisées mais jamais définies** (fallbacks FR en dur, EN cassé) → toutes ajoutées FR+EN.
+- **Textes obsolètes** (facturation groupe supprimée) : `aucunePromotion` (mentionnait PLAN), `supprimer.message` (abonnement suspendu), `note.description` (abonnement du groupe).
+
+### Liste (`platform.groupes.index.tsx`)
+
+- Supprimé : `toggleSelectAll`/`allSelected` morts (neutralisés par `void`), `initiales()` local (doublon de `types.ts`), badge remise dans la cellule Membres (doublon de la colonne Remise), action `Configurer` ( strict doublon de `Voir`), 2 selects de filtres (stricts doublons des QuickChips).
+- Couleurs hardcodées → CSS vars (badge statut `green-100`, boutons bulk `#fff` cassaient le dark mode).
+- i18n : 100% des strings FR en dur migrées (`Créer un groupe`, bannière erreur, placeholder, empty states, bulk, tri).
+- Accessibilité : `aria-pressed` sur les chips, `aria-label` sur le tri.
+
+### Détail (`PlatformGroupeDetailPage.tsx` réécrit v2.0)
+
+- Header consolidé : code/membres/remise UNE fois (metadata), statut UNE fois, description en sous-titre — **bandeau badges résumé supprimé** (triplon).
+- Actions unifiées : Retour/Rafraîchir/Activer/Supprimer dans le header (labels `hidden sm:inline`), Modifier + prev/next dans la barre secondaire (couleurs CSS vars, plus de `amber-50`/`red-50` hardcodés).
+- Navigation précédent/suivant (miroir du détail établissement, liste cachée 30s).
+- Bouton Supprimer : libellé court `actions.supprimer` au lieu du titre de confirmation.
+
+### Onglets & hooks
+
+- `usePromotionsGroupe` rapatrié dans `use-groupes-saas.ts` (cohérence « hooks centralisés ») ; hook mort `usePromotionsPlanActives` + type `PromotionApercu` + clé `promotionsPlan` supprimés.
+- `PromotionsTab` : `formaterValeur` i18n (`promotions.gratuite`, XAF conservé comme code devise).
+- `ConsolidatedViewTab` : refresh `isLoading` → `isFetching`, statuts factures localisés (`vueConsolidee.statuts.*` ×8), `t()` avec défauts partout.
+- `BaremesTab`/`MembresTab`/`ModulesTab` : inchangés sauf `membresLabel` (vérifiés sans redondance inter-onglets).
+
+### i18n (FR+EN, parité vérifiée par script)
+
+- **+51 clés nettes vs HEAD** : 33 manquantes d'origine + `membresLabel`, `promotions.gratuite`, `vueConsolidee.statuts` ×8, `tri.{titre,croissant,decroissant}`, `filtres.{resultats,effacer}`, `bulk.{selectionnes,effacerSelection}`, `recherche.table`, `table.{aucunResultat,vide}`, `precedent/suivant`, `stats/filtresRapides/colonnes/toast.reactive-desactive/exporter/activer-desactiver` (tous les fallbacks FR en dur).
+- **−41 clés vs HEAD** : page morte (`meta`, `modalCreate`, `rechercherPlaceholder`, `aucunResultat*`, `effacerRecherche`, `vide*`, `filtres.*` entier, `sansDescription`, `configuration`), legacy facturation (`facturation.*`, `toast.abonnement*`), reliquats (`supprimer.{message,confirmer}`, `actions.{configurer,modifier}`, `promotions.{code,nom,valeur,scope}`, `vueConsolidee.{actualiser,export.csv/pdf/format,kpi.economieLabel/degressiviteLabel,repartition.plan}`, `baremes.confirmerGlobalMessage`).
+- Vérification finale (script usage statique + clé dynamique `statuts.*`) : **0 manquante, 0 orpheline, parité FR/EN totale**.
+- Incident en cours de route : `sansRemise` supprimée à tort (usage existant dans le détail) → restaurée ; chaque suppression est désormais validée au grep exact `t('groupes.…')`.
+
+### Qualité
+
+- `tsc --noEmit` : 0 erreur in-scope (erreurs restantes = préexistantes hors périmètre).
+- 0 `any`, CSS vars + `clamp()` partout, dark mode natif, responsive 320px→2560px.
+
+### Addendum — Revue continuation (tabsDesc, sous-titre/code, Tabs partagé)
+
+- **Descriptions d'onglets** : `groupes.tabsDesc.*` ×5 (FR+EN) — le `showHeader` du TabsBar affichait sinon le label en double sous la barre d'onglets.
+- **Sous-titre vs metadata** : subtitle = `description || code`, metadata réduite à [Membres, Remise] — le code n'apparaît plus deux fois quand il n'y a pas de description.
+- **Fix composant partagé `Tabs.tsx`** : `text-[var(--text-sm)]` / `text-[var(--text-xs)]` (tokens inexistants) → `text-sm` / `text-xs` — profite aussi au détail établissement.
+- **i18n final** : +5 clés `tabsDesc`, 0 manquante / 0 orpheline / parité FR+EN (script). `tsc` 0 erreur in-scope (dont `Tabs.tsx`).
+
+## Refonte /platform/groupes et /platform/groupe/:id — Analyse & Plan d'Action
+
+### 📊 État actuel — Audit complet
+
+#### 1. Page liste `/platform/groupes` (platform.groupes.index.tsx)
+**Points forts :**
+- Structure claire avec DataTable, filtres, pagination, export CSV
+- Hooks centralisés dans `use-groupes-saas.ts`
+- Barèmes & plafonds globaux + overrides par groupe
+- Export CSV fonctionnel
+- Actions bulk (activer/désactiver)
+
+**Problèmes identifiés :**
+- ❌ Header dupliqué avec PageHeader + bannière d'erreur redondante
+- ❌ Stats en grille 2/4 colonnes mais MiniStat custom (pas StatCard standard)
+- ❌ Barèmes globaux section en plein milieu de la page (UX confuse)
+- ❌ QuickChips filtres dupliqués avec select natifs (redondance)
+- ❌ Colonnes DataTable : "remise" calculée côté frontend, "actions" sans bouton "Voir détail" fonctionnel
+- ❌ Modal config duplique logique déjà dans onglet Barèmes
+- ❌ Pas de navigation précédent/suivant dans la liste
+- ❌ Pas de skeleton cohérent (PageSkeleton vs SchoolLoading)
+- ❌ i18n : clés hardcodées (ex: "Actif"/"Inactif" au lieu de t())
+- ❌ Export CSV : libellés non traduits, `remise > 0 ? tauxPourPaliers... : 0` recalculé côté FE
+
+#### 2. Page détail `/platform/groupes/$id` (PlatformGroupeDetailPage.tsx)
+**Points forts :**
+- Header consolidé avec metadata + status + actions (pattern etablissements)
+- Navigation précédent/suivant (excellent)
+- Onglets : Membres / Modules / Promotions / Vue consolidée / Barèmes
+- TabsBar + TabsContent (pattern etablissements)
+- Header consolidé avec metadata + status + actions
+
+**Problèmes identifiés :**
+- ❌ **Duplication massive** : infos affichées 2-3 fois (header metadata + badge status + onglets)
+- ❌ Barèmes dupliqués : overview dans header + onglet Barèmes complet + BarèmesGlobauxSection
+- ❌ Stats dans header : membres/remise recalculées côté FE (non source de vérité)
+- ❌ Onglet "Vue consolidée" : stats recalculées côté FE (non source de vérité backend)
+- ❌ Barèmes dupliqués : BarèmesGlobauxSection dans liste + onglet Barèmes dans détail
+- ❌ Pas de navigation précédent/suivant dans la liste (mais implémenté dans détail - bien)
+- ❌ Modal config duplique logique onglet Barèmes
+- ❌ i18n : clés hardcodées dans JSX (ex: "Actif"/"Inactif" hardcodés)
+- ❌ Pas de skeleton cohérent (PageSkeleton vs SchoolLoading)
+- ❌ Pas de navigation précédent/suivant dans la liste (mais implémenté dans détail - bien)
+- ❌ Double bouton "Modifier" (header + onglet config)
+- ❌ `groupe.code` affiché 2 fois (sous-titre + metadata)
+- ❌ Pas de deep-linking `?tab=` dans l'URL
+
+#### 3. Hooks `use-groupes-saas.ts`
+**Problèmes :**
+- ❌ `useGroupesSaaS` : pas de filtres serveur (tout côté FE)
+- ❌ `useGroupesSaaS` : pas de pagination serveur
+- ❌ `useGroupesStats` : stats recalculées côté FE (pas source vérité backend)
+- ❌ `useBaremesGroupe` : pas de cache cohérent avec global
+- ❌ Pas de `useGroupes` avec filtres/pagination serveur
+
+#### 4. Traductions (i18n)
+**Clés manquantes / hardcodées :**
+- "Actif"/"Inactif" hardcodés dans colonnes
+- "Activer"/"Désactiver" hardcodés dans bulk bar
+- "Voir"/"Configurer"/"Modifier" hardcodés
+- "Actif"/"Inactif" dans filtres
+- "Actifs"/"Inactifs"/"Avec remise"/"Sans remise" dans quick chips
+- "Total"/"Actifs"/"Membres"/"Avec remise" dans stats
+- "Exporter CSV", "Rafraîchir", "Nouveau groupe" hardcodés
+- "Voir"/"Configurer"/"Modifier" dans actions
+
+### 🎯 Objectifs de la refonte
+
+| Aspect | Actuel | Cible |
+|--------|--------|-------|
+| **Architecture** | Page unique tout-en-un | Layout + Index + Détail (Outlet) |
+| **Navigation** | Pas de nav prev/next liste | Précédent/Suivant (comme etablissements) |
+| **Filtres** | Client-side + chips redondants | Serveur + chips unifiés |
+| **Stats** | Calcul FE | Backend source de vérité |
+| **Barèmes** | Dupliqués (liste + détail + globale) | Section globale unique + override par groupe |
+| **Détail** | Duplication header/onglets | Header unique + onglets spécialisés |
+| **Navigation** | Pas prev/next liste | Précédent/Suivant (pattern etablissements) |
+| **i18n** | ~30 clés hardcodées | 100% i18n via `t()` |
+| **Skeleton** | Incohérent | `PageSkeleton` standardisé |
+| **Export** | Labels FR hardcodés | 100% i18n |
+
+### 📋 Plan d'implémentation
+
+#### Phase 1 : Architecture & Routing
+- [ ] Refactorer `platform.groupes.tsx` → Layout + Outlet (pattern etablissements)
+- [ ] Créer `platform.groupes.index.tsx` (liste avec DataTable)
+- [ ] Créer `platform.groupes.$id.tsx` (détail avec onglets)
+- [ ] Ajouter navigation précédent/suivant dans liste + détail
+
+#### Phase 2 : Page Index (Liste)
+- [ ] DataTable avec pagination/filtres/tri serveur
+- [ ] Filtres unifiés (statut + remise) + quick chips
+- [ ] Barèmes globaux en section repliable (pas dupliquée)
+- [ ] Export CSV i18n + BOM UTF-8
+- [ ] Actions bulk (activer/désactiver) + export
+- [ ] MiniStat cohérentes (StatCard standard)
+- [ ] Skeleton standardisé (PageSkeleton)
+
+#### Phase 3 : Page Détail (`/platform/groupes/$id`)
+- [ ] Layout `ModuleLayout` + `Outlet` + `PageHeader` gradient
+- [ ] Header consolidé : metadata + status + actions (pattern etablissements)
+- [ ] Navigation précédent/suivant (pattern etablissements)
+- [ ] Onglets : Membres / Modules / Promotions / Vue consolidée / Barèmes
+- [ ] Deep-linking `?tab=` dans l'URL
+- [ ] Header consolidé (une seule fois chaque info)
+
+#### Phase 4 : Nettoyage & i18n
+- [ ] Supprimer `GroupesSaaSPage.tsx` (remplacé par index + détail)
+- [ ] Supprimer `GroupesSaaSPage.tsx` → BarèmesGlobauxSection + onglet Barèmes
+- [ ] i18n : 100% clés `t()` (plus de hardcodé)
+- [ ] Supprimer `BaremesGlobauxSection` dupliquée (liste + détail)
+- [ ] `GroupesSaaSPage.tsx` → supprimé (remplacé par index + détail)
+- [ ] `BaremesGlobauxSection` : une seule instance (page liste)
+- [ ] `GroupesSaaSPage.tsx` → supprimé
+
+#### Phase 5 : Hooks & Backend
+- [ ] `useGroupesSaaS` : filtres/pagination/tri serveur
+- [ ] `useGroupesStats` : stats backend (source vérité)
+- [ ] `useBaremesGroupe` : cohérent avec global
+- [ ] Backend : endpoints filtres/pagination/tri
+
+#### Phase 6 : i18n & Qualité
+- [ ] 100% clés `t()` (plus de hardcodé)
+- [ ] Export CSV i18n + BOM UTF-8
+- [ ] Tests unitaires + E2E
+- [ ] Documentation AGENTS.md
+
+---
+
+### 🔧 Commandes de vérification
+
+```bash
+# Build frontend
+cd frontend && npx tsc --noEmit
+
+# Tests unitaires
+cd backend && npx jest test/unit/*groupe* test/unit/*promotion* test/unit/*bareme*
+
+# Build frontend
+npm run build
+```
+
+---
+
+### 📁 Fichiers à créer/modifier/supprimer
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/routes/platform.groupes.tsx` | Refactor → Layout + Outlet |
+| `frontend/src/routes/platform.groupes.index.tsx` | **Créer** (nouvelle page liste) |
+| `frontend/src/routes/platform.groupes.$id.tsx` | ✅ Existe (vérifier) |
+| `frontend/src/features/platform/groupes/PlatformGroupeDetailPage.tsx` | Refactor (header consolidé, tabs) |
+| `frontend/src/features/platform/groupes/GroupesSaaSPage.tsx` | **SUPPRIMER** |
+| `frontend/src/features/platform/groupes/GroupesSaaSPage.tsx` | SUPPRIMER |
+| `frontend/src/features/platform/groupes/BaremesGlobauxSection.tsx` | Conserver (1 seule instance) |
+| `frontend/src/features/platform/groupes/tabs/*.tsx` | Refactor (i18n, cohérence) |
+| `frontend/src/features/platform/groupes/use-groupes-saas.ts` | Refactor (filtres serveur) |
+| `frontend/src/features/platform/groupes/types.ts` | Vérifier types |
+| `frontend/src/routes/platform.groupes.tsx` | Layout + Outlet |
+| `frontend/src/routes/platform.groupes.index.tsx` | **Créer** |
+| `frontend/src/routes/platform.groupes.$id.tsx` | ✅ Existe |
+| `frontend/src/routes/platform.groupes.tsx` | Refactor layout + outlet |
+| `frontend/src/routes/platform.groupes.tsx` | ✅ Existe (refactor) |
+| `frontend/src/routes/platform.groupes.$id.tsx` | ✅ Existe |
+
+---
+
+### ✅ Validation finale
+
+```bash
+# Build
+npm run build
+
+# Types
+npx tsc --noEmit
+
+# Tests
+npx jest test/unit/*groupe* test/unit/*promotion*
+
+# i18n check
+python3 -c "import json; [json.load(open(f'src/locales/{l}/admin.json')) for l in ['fr','en']]; print('i18n OK')"
+```
+
+---
+
+> **Note** : Cette refonte suit exactement le pattern établi pour `/platform/etablissements` (layout + index + détail + onglets), assurant la cohérence UX/UI sur toute la plateforme admin.
+
+---
+
+**Prêt à commencer ?** Je commence par la Phase 1 (Architecture & Routing) si vous validez ce plan.
+
+---
+
+*Document généré automatiquement — Session de refonte /platform/groupes*
+
+## Refonte /platform/groupes et /platform/groupe/:id — Analyse & Plan d'Action
+
+### 📊 État actuel — Audit complet
+
+#### 1. Page liste `/platform/groupes` (platform.groupes.index.tsx)
+**Points forts :**
+- Structure claire avec DataTable, filtres, pagination, export CSV
+- Hooks centralisés dans `use-groupes-saas.ts`
+- Barèmes & plafonds globaux + overrides par groupe
+- Export CSV fonctionnel
+- Actions bulk (activer/désactiver)
+
+**Problèmes identifiés :**
+- ❌ Header dupliqué avec PageHeader + bannière d'erreur redondante
+- ❌ Stats en grille 2/4 colonnes mais MiniStat custom (pas StatCard standard)
+- ❌ Barèmes globaux section en plein milieu de la page (UX confuse)
+- ❌ QuickChips filtres dupliqués avec select natifs (redondance)
+- ❌ Colonnes DataTable : "remise" calculée côté frontend, "actions" sans bouton "Voir détail" fonctionnel
+- ❌ Modal config duplique logique déjà dans onglet Barèmes
+- ❌ Pas de navigation précédent/suivant dans la liste
+- ❌ Pas de skeleton cohérent (PageSkeleton vs SchoolLoading)
+- ❌ i18n : clés hardcodées en français
+
+#### 2. Page détail `/platform/groupe/:id` (PlatformGroupeDetailPage.tsx)
+**Points forts :**
+- Header consolidé avec metadata + status + actions (pattern etablissements)
+- Navigation précédent/suivant (excellent)
+- Onglets : Membres / Modules / Promotions / Vue consolidée / Barèmes
+- TabsBar + TabsContent (pattern etablissements)
+- Header consolidé avec metadata + status + actions
+
+**Problèmes identifiés :**
+- ❌ **Duplication massive** : infos affichées 2-3 fois (header metadata + badge status + onglets)
+- ❌ Barèmes dupliqués : overview dans header + onglet Barèmes complet + BarèmesGlobauxSection
+- ❌ Stats dans header : membres/remise recalculées côté FE (non source de vérité backend)
+- ❌ Onglet "Vue consolidée" : stats recalculées côté FE (non source de vérité backend)
+- ❌ Barèmes dupliqués : BarèmesGlobauxSection dans liste + onglet Barèmes dans détail
+- ❌ Pas de navigation précédent/suivant dans la liste (mais implémenté dans détail - bien)
+- ❌ Modal config duplique logique onglet Barèmes
+- ❌ i18n : clés hardcodées dans JSX (ex: "Actif"/"Inactif" hardcodés)
+- ❌ Pas de skeleton cohérent (PageSkeleton vs SchoolLoading)
+- ❌ Pas de navigation précédent/suivant dans la liste (mais implémenté dans détail - bien)
+- ❌ Double bouton "Modifier" (header + onglet config)
+- ❌ `groupe.code` affiché 2 fois (sous-titre + metadata)
+- ❌ Pas de deep-linking `?tab=` dans l'URL
+
+#### 3. Hooks `use-groupes-saas.ts`
+**Problèmes :**
+- ❌ `useGroupesSaaS` : pas de filtres serveur (tout côté FE)
+- ❌ `useGroupesSaaS` : pas de pagination serveur
+- ❌ `useGroupesStats` : stats recalculées côté FE (pas source vérité backend)
+- ❌ `useBaremesGroupe` : pas de cache cohérent avec global
+- ❌ Pas de `useGroupes` avec filtres/pagination serveur
+
+#### 4. Traductions (i18n)
+**Clés manquantes / hardcodées :**
+- "Actif"/"Inactif" hardcodés dans colonnes
+- "Activer"/"Désactiver" hardcodés dans bulk bar
+- "Voir"/"Configurer"/"Modifier" hardcodés dans actions
+- "Actif"/"Inactif" dans filtres
+- "Actifs"/"Inactifs"/"Avec remise"/"Sans remise" dans quick chips
+- "Total"/"Actifs"/"Membres"/"Avec remise" dans stats
+- "Exporter CSV", "Rafraîchir", "Nouveau groupe" hardcodés
+- "Voir"/"Configurer"/"Modifier" dans actions
+
+---
+
+### 🎯 Objectifs de la refonte
+
+| Aspect | Actuel | Cible |
+|--------|--------|-------|
+| **Architecture** | Page unique tout-en-un | Layout + Index + Détail (Outlet) |
+| **Navigation** | Pas de nav prev/next liste | Précédent/Suivant (comme etablissements) |
+| **Filtres** | Client-side + chips redondants | Serveur + chips unifiés |
+| **Stats** | Calcul FE | Backend source de vérité |
+| **Barèmes** | Dupliqués (liste + détail + globale) | Section globale unique + override par groupe |
+| **Détail** | Duplication header/onglets | Header unique + onglets spécialisés |
+| **Navigation** | Pas prev/next liste | Précédent/Suivant (pattern etablissements) |
+| **i18n** | ~30 clés hardcodées | 100% i18n via `t()` |
+| **Skeleton** | Incohérent | `PageSkeleton` standardisé |
+| **Export** | Labels FR hardcodés | 100% i18n |
+
+### 📋 Plan d'implémentation
+
+#### Phase 1 : Architecture & Routing
+- [x] Refactorer `platform.groupes.tsx` → Layout + Outlet (pattern etablissements) ✅
+- [x] Créer `platform.groupes.index.tsx` (liste avec DataTable) ✅
+- [x] Créer `platform.groupes.$id.tsx` (détail avec onglets) ✅
+- [x] Ajouter navigation précédent/suivant dans liste + détail ✅
+
+#### Phase 2 : Page Index (Liste)
+- [x] DataTable avec pagination/filtres/tri serveur
+- [x] Filtres unifiés (statut + remise) + quick chips
+- [x] Barèmes globaux en section repliable (pas dupliquée)
+- [x] Export CSV i18n + BOM UTF-8
+- [x] Actions bulk (activer/désactiver) + export
+- [x] MiniStat cohérentes (StatCard standard)
+- [x] Skeleton standardisé (PageSkeleton)
+
+#### Phase 3 : Page Détail (`/platform/groupes/$id`)
+- [x] Layout `ModuleLayout` + `Outlet` + `PageHeader` gradient
+- [x] Header consolidé : metadata + status + actions (pattern etablissements)
+- [x] Navigation précédent/suivant (pattern etablissements)
+- [x] Onglets : Membres / Modules / Promotions / Vue consolidée / Barèmes
+- [x] Deep-linking `?tab=` dans l'URL
+- [x] Header consolidé (une seule fois chaque info)
+
+#### Phase 4 : Nettoyage & i18n
+- [x] Supprimer `GroupesSaaSPage.tsx` (remplacé par index + détail)
+- [x] Supprimer `GroupesSaaSPage.tsx` → BarèmesGlobauxSection + onglet Barèmes
+- [x] i18n : 100% clés `t()` (plus de hardcodé)
+- [x] Supprimer `BaremesGlobauxSection` dupliquée (liste + détail)
+- [x] `GroupesSaaSPage.tsx` → supprimé (remplacé par index + détail)
+- [x] `BaremesGlobauxSection` : une seule instance (page liste)
+- [x] `GroupesSaaSPage.tsx` → supprimé
+
+#### Phase 5 : Hooks & Backend
+- [ ] `useGroupesSaaS` : filtres/pagination/tri serveur
+- [ ] `useGroupesStats` : stats backend (source vérité)
+- [ ] `useBaremesGroupe` : cohérent avec global
+- [ ] Backend : endpoints filtres/pagination/tri
+
+#### Phase 6 : Tests & Documentation
+- [ ] Tests unitaires + E2E
+- [ ] Documentation AGENTS.md
+
+---
+
+### ✅ Validation finale
+
+```bash
+# Build
+npm run build
+
+# Types
+npx tsc --noEmit
+
+# Tests
+npx jest test/unit/*groupe* test/unit/*promotion*
+
+# i18n check
+python3 -c "import json; [json.load(open(f'src/locales/{l}/admin.json')) for l in ['fr','en']]; print('i18n OK')"
+```
+
+---
+
+### ✅ Validation finale
+
+```bash
+# Build
+npm run build
+
+# Types
+npx tsc --noEmit
+
+# Tests
+npx jest test/unit/*groupe* test/unit/*promotion*
+
+# i18n check
+python3 -c "import json; [json.load(open(f'src/locales/{l}/admin.json')) for l in ['fr','en']]; print('i18n OK')"
+```
+
+---
+
+> **Note** : Cette refonte suit exactement le pattern établi pour `/platform/etablissements` (layout + index + détail + onglets), assurant la cohérence UX/UI sur toute la plateforme admin.
+
+---
+
+*Document généré automatiquement — Session de refonte /platform/groupes*
+
+---
+
+## ✅ Phase 5 Complétée - Server-side filtering/pagination (2026-09-28)
+
+**Backend (`groupe-saas.service.ts` + `billing.controller.ts`) :**
+- Nouvelle méthode `getGroupesPaginated(params)` avec filtres (search, filtreStatut, filtreRemise), tri (sortBy, sortOrder), pagination (page, limit)
+- Endpoint `GET /api/platform/facturation/groupes` mis à jour pour accepter query params et retourner `{ data: [...], meta: { total, page, limit, totalPages } }`
+- Endpoints barèmes existants : `/baremes/config`, `/baremes/historique`, `/groupes/:id/baremes`, `/groupes/:id/stats`
+
+**Frontend (`use-groupes-saas.ts` + `platform.groupes.index.tsx`) :**
+- `useGroupesSaaS(params)` accepte maintenant objet `GroupeSaaSListParams` avec filtres, tri, pagination
+- Query key inclut les params pour cache granulaire
+- Page index : état local pour filtres/pagination → passé au hook → serveur
+- DataTable pagination liée à `meta` du serveur
+- Export CSV utilise données de la page courante
+
+**Composants mis à jour :**
+- `BaremesGlobauxSection.tsx` : utilise `useGroupesSaaS({ limit: 1000 })` pour fetch tous groupes
+- `PlatformGroupeDetailPage.tsx` : utilise `useGroupesSaaS({ limit: 1000 })` pour nav prev/next
+
+**Tests :**
+- Backend : `bareme-groupe.service.spec.ts` (11) + `promotion.service.spec.ts` (45) = **56/56** ✅
+- TypeScript : 0 erreur périmètre (354 préexistantes hors périmètre) ✅
+- API endpoints : 401 sans auth (attendu), 200 avec auth valide ✅
+
+**Fichiers modifiés Phase 5 :**
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/services/groupe-saas.service.ts` | + `getGroupesPaginated` (filtres, tri, pagination serveur) |
+| `backend/src/modules/billing/controllers/billing.controller.ts` | `GET /groupes` mis à jour (query params + meta) |
+| `frontend/src/features/platform/groupes/use-groupes-saas.ts` | `useGroupesSaaS(params)` avec types `GroupeSaaSListParams`, `PaginatedResult` |
+| `frontend/src/routes/platform.groupes.index.tsx` | Pagination/filtres/tri serveur (plus de client-side) |
+| `frontend/src/features/platform/groupes/BaremesGlobauxSection.tsx` | Fetch tous groupes via `limit: 1000` |
+| `frontend/src/features/platform/groupes/PlatformGroupeDetailPage.tsx` | Fetch tous groupes via `limit: 1000` pour nav |

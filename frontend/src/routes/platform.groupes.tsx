@@ -3,14 +3,13 @@
  * eLISAschool - Platform Groupes SaaS
  * ==================================
  * Page plateforme — Groupes d'établissements (organisation SaaS).
- * v2.0 — ModuleLayout + guard rôles plateforme (cohérence etablissements).
+ * v3.0 — Layout ModuleLayout + guard rôles plateforme + Outlet pour index + détail.
  */
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { requireRole } from '@/app/permission-guards';
 import { ModuleLayout } from '@/components/layout/ModuleLayout';
 import { useCurrentBreadcrumbLabel } from '@/components/navigation/breadcrumb-context';
-import GroupesSaaSPage from '@/features/platform/components/groupes-saas-page';
 
 /** Rôles plateforme ayant accès au Control Plane */
 const ROLES_PLATEFORME = [
@@ -22,20 +21,18 @@ const ROLES_PLATEFORME = [
     'PLATEFORME_AUDITOR',
 ];
 
-function PlatformGroupesPage() {
+function PlatformGroupesLayout() {
     const currentLabel = useCurrentBreadcrumbLabel();
     return (
         <ModuleLayout animationKey={currentLabel || 'groupes'}>
-            <div className="p-[clamp(1rem,2vw,1.5rem)]">
-                <GroupesSaaSPage />
-            </div>
+            <Outlet />
         </ModuleLayout>
     );
 }
 
 export const Route = createFileRoute('/platform/groupes')({
     beforeLoad: () => requireRole(ROLES_PLATEFORME),
-    component: PlatformGroupesPage,
+    component: PlatformGroupesLayout,
 });
 
-export default PlatformGroupesPage;
+export default PlatformGroupesLayout;

@@ -1077,36 +1077,13 @@
             "erreurChargement": "Établissements inaccessibles",
             "erreurChargementDetail": "La liste des établissements n'a pas pu être chargée."
         },
-        "sansDescription": "Aucune description",
-        "configuration": "Configuration",
-        "modalCreate": {
-            "titre": "Nouveau groupe"
-        },
-        "meta": {
-            "groupes": "Groupes",
-            "membres": "Membres"
-        },
         "statut": {
             "actif": "Actif",
             "inactif": "Inactif"
         },
         "actions": {
-            "configurer": "Configurer",
-            "modifier": "Modifier",
             "supprimer": "Désactiver"
         },
-        "filtres": {
-            "statut": "Statut",
-            "tous": "Tous les groupes",
-            "actifs": "Actifs uniquement",
-            "inactifs": "Inactifs uniquement"
-        },
-        "rechercherPlaceholder": "Rechercher par nom, code ou description…",
-        "aucunResultat": "Aucun groupe ne correspond à la recherche",
-        "aucunResultatDetail": "Modifiez les critères ou effacez la recherche pour voir l'ensemble des groupes.",
-        "effacerRecherche": "Effacer la recherche",
-        "vide": "Aucun groupe configuré",
-        "videDescription": "Créez votre premier groupe pour mutualiser plans, modules et facturation.",
         "erreurChargement": "Chargement impossible",
         "erreurChargementDetail": "Les groupes n'ont pas pu être chargés. Vérifiez votre connexion puis réessayez.",
         "tabs": {
@@ -1138,12 +1115,10 @@
         },
         "supprimer": {
             "titre": "Désactiver ce groupe ?",
-            "message": "Désactiver « {{nom}} » ? Les établissements seront libérés et l'abonnement suspendu.",
-            "details": "Suppression logique : les overrides modules sont conservés pour un éventuel rétablissement.",
-            "confirmer": "Désactiver"
+            "details": "Suppression logique : les overrides modules sont conservés pour un éventuel rétablissement."
         },
         "aucunMembre": "Aucun membre dans ce groupe",
-        "aucunePromotion": "Aucune promotion PLAN active pour le moment",
+        "aucunePromotion": "Aucune promotion assignée à ce groupe",
         "modules": {
             "compteur": "{{actifs}} / {{total}} modules actifs",
             "rechercher": "Rechercher un module…",
@@ -1155,10 +1130,6 @@
             "erreurChargementDetail": "Le catalogue ou les overrides n'ont pas pu être chargés."
         },
         "promotions": {
-            "code": "Code",
-            "nom": "Nom",
-            "valeur": "Valeur",
-            "scope": "Scope",
             "gerer": "Gérer les promotions",
             "notePerimetre": "Promotions scope GROUPE : appliquées en ligne REMISE sur chaque facture individuelle des membres (plafond 40% indépendant). L’assignation utilise la liste multi-groupes, sans toucher aux autres groupes.",
             "erreurChargement": "Promotions inaccessibles",
@@ -1168,7 +1139,8 @@
             "assigner": "Assigner",
             "retirer": "Retirer",
             "exclusif": "Exclusif",
-            "aucuneGroupe": "Aucune promotion scope GROUPE — créez-en une dans Promotions & Remises."
+            "aucuneGroupe": "Aucune promotion scope GROUPE — créez-en une dans Promotions & Remises.",
+            "gratuite": "Gratuité"
         },
         "vueConsolidee": {
             "titre": "Vue consolidée — {{nom}}",
@@ -1177,20 +1149,14 @@
             "erreurChargement": "Impossible de charger les statistiques",
             "erreurChargementDetail": "Les statistiques consolidées n'ont pas pu être chargées. Vérifiez votre connexion puis réessayez.",
             "aucuneDonnee": "Aucune donnée disponible pour ce groupe",
-            "actualiser": "Actualiser",
             "export": {
-                "csv": "CSV",
-                "pdf": "PDF",
-                "format": "Format",
                 "bouton": "Exporter"
             },
             "kpi": {
                 "facturesMois": "Factures ce mois",
                 "montantHT": "Montant HT",
                 "economieMois": "Économie du mois",
-                "economieLabel": "vs sans dégressivité",
-                "degressivite": "Dégressivité",
-                "degressiviteLabel": "appliquée automatiquement"
+                "degressivite": "Dégressivité"
             },
             "degressivite": {
                 "titre": "Dégressivité appliquée",
@@ -1201,7 +1167,6 @@
             },
             "repartition": {
                 "titre": "Répartition par plan",
-                "plan": "Plan",
                 "membres": "membres"
             },
             "facturesRecentes": {
@@ -1217,7 +1182,17 @@
             },
             "note": {
                 "titre": "Note importante",
-                "description": "La dégressivité est appliquée automatiquement sur chaque facture individuelle des établissements du groupe. Cette vue est en lecture seule — la configuration se fait via l'abonnement du groupe."
+                "description": "La dégressivité est appliquée automatiquement sur chaque facture individuelle des établissements du groupe. Cette vue est en lecture seule — la configuration se fait dans l'onglet Barèmes."
+            },
+            "statuts": {
+                "PAYEE": "Payée",
+                "EN_RETARD": "En retard",
+                "EMISE": "Émise",
+                "PARTIELLEMENT_PAYEE": "Partiellement payée",
+                "BROUILLON": "Brouillon",
+                "ANNULEE": "Annulée",
+                "EN_PAIEMENT": "En paiement",
+                "AVOIR": "Avoir"
             }
         },
         "toast": {
@@ -1227,32 +1202,21 @@
             "membreAjoute": "Membre ajouté",
             "membreRetire": "Membre retiré",
             "moduleMaj": "Module mis à jour",
-            "abonnementMaj": "Abonnement enregistré",
-            "abonnementSuspendu": "Abonnement suspendu",
-            "abonnementReactive": "Abonnement réactivé",
             "erreurCreation": "Erreur lors de la création",
             "erreurMaj": "Erreur lors de la mise à jour",
             "erreurSuppression": "Erreur lors de la désactivation",
             "erreurMembre": "Opération membre impossible",
             "erreurModule": "Mise à jour module impossible",
-            "erreurAbonnement": "Enregistrement abonnement impossible",
             "promoAssignee": "Promotion assignée au groupe",
             "promoRetiree": "Promotion retirée du groupe",
             "erreurPromo": "Opération promotion impossible",
             "baremesMaj": "Barèmes enregistrés",
             "baremesReinitialises": "Retour aux valeurs globales",
             "baremesRestaures": "Version restaurée",
-            "erreurBaremes": "Enregistrement barèmes impossible"
+            "erreurBaremes": "Enregistrement barèmes impossible",
+            "reactive": "Groupe(s) réactivé(s)",
+            "desactive": "Groupe(s) désactivé(s)"
         },
-        "facturation": {
-            "individuelle": "Individuelle",
-            "consolidee": "Consolidée",
-            "hybride": "Hybride",
-            "degressivite": "Dégressivité",
-            "repartition": "Répartition au prorata"
-        },
-        "degressivite": "dégressivité",
-        "sansRemise": "Sans remise",
         "baremes": {
             "effectives": "Valeurs effectives pour ce groupe",
             "paliers": "Barème dégressivité",
@@ -1282,7 +1246,6 @@
             "historiqueVide": "Aucune modification enregistrée.",
             "restaurer": "Restaurer",
             "confirmerGlobalTitre": "Appliquer les valeurs globales ?",
-            "confirmerGlobalMessage": "{{count}} groupe(s) avec 2+ membres concernés — et tous les établissements hors groupe pour le plafond PLAN.",
             "confirmerResetTitre": "Revenir aux valeurs globales ?",
             "confirmerResetMessage": "Les overrides de « {{nom}} » seront supprimés. La prochaine facture utilisera le barème global.",
             "confirmerRestaurerTitre": "Restaurer cette version ?",
@@ -1302,6 +1265,70 @@
             "globalesLectureSeule": "Les valeurs globales s'éditent dans la section « Barèmes & plafonds globaux » de la page Groupes.",
             "modifierGlobaux": "Modifier",
             "confirmerGlobalMessageComplet": "{{count}} groupe(s) avec 2+ membres concernés — et tous les établissements hors groupe pour le plafond PLAN, qui s'applique à toute la plateforme."
+        },
+        "activer": "Activer",
+        "desactiver": "Désactiver",
+        "activerTitre": "Réactiver ce groupe",
+        "desactiverTitre": "Désactiver ce groupe",
+        "activerDetails": "Le groupe pourra à nouveau accueillir des membres.",
+        "desactiverDetails": "Le groupe libèrera ses membres.",
+        "precedent": "Précédent",
+        "suivant": "Suivant",
+        "exporter": "Exporter CSV",
+        "membresLabel": "membres",
+        "colonnes": {
+            "nom": "Groupe",
+            "code": "Code",
+            "membres": "Membres",
+            "statut": "Statut",
+            "remise": "Remise"
+        },
+        "stats": {
+            "total": "Total",
+            "actifs": "Actifs",
+            "membres": "Membres",
+            "avecRemise": "Avec remise"
+        },
+        "filtresRapides": {
+            "tous": "Tous",
+            "actifs": "Actifs",
+            "inactifs": "Inactifs",
+            "avecRemise": "Avec remise",
+            "sansRemise": "Sans remise"
+        },
+        "tri": {
+            "nom": "Nom",
+            "code": "Code",
+            "membres": "Membres",
+            "remise": "Remise",
+            "statut": "Statut",
+            "date": "Date création",
+            "croissant": "Croissant",
+            "decroissant": "Décroissant",
+            "titre": "Trier par"
+        },
+        "filtres": {
+            "resultats": "{{count}} résultat(s)",
+            "effacer": "Effacer"
+        },
+        "bulk": {
+            "selectionnes": "{{count}} sélectionné(s)",
+            "effacerSelection": "Effacer la sélection"
+        },
+        "recherche": {
+            "table": "Rechercher par nom, code ou description…"
+        },
+        "table": {
+            "aucunResultat": "Aucun groupe ne correspond à la recherche",
+            "vide": "Aucun groupe configuré"
+        },
+        "sansRemise": "Sans remise",
+        "tabsDesc": {
+            "membres": "Établissements rattachés au groupe",
+            "modules": "Overrides de modules appliqués aux membres",
+            "promotions": "Promotions GROUPE assignées au groupe",
+            "consolidee": "Synthèse financière en lecture seule",
+            "baremes": "Paliers dégressifs et plafonds effectifs"
         }
     },
     "onboarding": {

@@ -91,6 +91,7 @@ import { Route as AuthBibliothequeRouteImport } from './routes/_auth.bibliothequ
 import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-scolaires'
 import { Route as PlatformUtilisateursIndexRouteImport } from './routes/platform.utilisateurs.index'
 import { Route as PlatformRolesIndexRouteImport } from './routes/platform.roles.index'
+import { Route as PlatformGroupesIndexRouteImport } from './routes/platform.groupes.index'
 import { Route as PlatformEtablissementsIndexRouteImport } from './routes/platform.etablissements.index'
 import { Route as PlatformDebugIndexRouteImport } from './routes/platform.debug.index'
 import { Route as ECodeIndexRouteImport } from './routes/e.$code.index'
@@ -120,6 +121,7 @@ import { Route as AuthBulletinsIndexRouteImport } from './routes/_auth.bulletins
 import { Route as AuthAnneesScolairesIndexRouteImport } from './routes/_auth.annees-scolaires.index'
 import { Route as PlatformUtilisateursIdRouteImport } from './routes/platform.utilisateurs.$id'
 import { Route as PlatformRolesIdRouteImport } from './routes/platform.roles.$id'
+import { Route as PlatformGroupesIdRouteImport } from './routes/platform.groupes.$id'
 import { Route as PlatformEtablissementsIdRouteImport } from './routes/platform.etablissements.$id'
 import { Route as PlatformDebugFeaturesRouteImport } from './routes/platform.debug.features'
 import { Route as PlatformDebugEntitlementsRouteImport } from './routes/platform.debug.entitlements'
@@ -605,6 +607,11 @@ const PlatformRolesIndexRoute = PlatformRolesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PlatformRolesRoute,
 } as any)
+const PlatformGroupesIndexRoute = PlatformGroupesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PlatformGroupesRoute,
+} as any)
 const PlatformEtablissementsIndexRoute =
   PlatformEtablissementsIndexRouteImport.update({
     id: '/',
@@ -752,6 +759,11 @@ const PlatformRolesIdRoute = PlatformRolesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => PlatformRolesRoute,
+} as any)
+const PlatformGroupesIdRoute = PlatformGroupesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PlatformGroupesRoute,
 } as any)
 const PlatformEtablissementsIdRoute =
   PlatformEtablissementsIdRouteImport.update({
@@ -1190,7 +1202,7 @@ export interface FileRoutesByFullPath {
   '/platform/etablissements': typeof PlatformEtablissementsRouteWithChildren
   '/platform/factures': typeof PlatformFacturesRoute
   '/platform/fonctionnalites': typeof PlatformFonctionnalitesRoute
-  '/platform/groupes': typeof PlatformGroupesRoute
+  '/platform/groupes': typeof PlatformGroupesRouteWithChildren
   '/platform/modules': typeof PlatformModulesRoute
   '/platform/monitoring': typeof PlatformMonitoringRoute
   '/platform/notifications-config': typeof PlatformNotificationsConfigRoute
@@ -1257,6 +1269,7 @@ export interface FileRoutesByFullPath {
   '/platform/debug/entitlements': typeof PlatformDebugEntitlementsRoute
   '/platform/debug/features': typeof PlatformDebugFeaturesRoute
   '/platform/etablissements/$id': typeof PlatformEtablissementsIdRoute
+  '/platform/groupes/$id': typeof PlatformGroupesIdRoute
   '/platform/roles/$id': typeof PlatformRolesIdRoute
   '/platform/utilisateurs/$id': typeof PlatformUtilisateursIdRoute
   '/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
@@ -1286,6 +1299,7 @@ export interface FileRoutesByFullPath {
   '/e/$code/': typeof ECodeIndexRoute
   '/platform/debug/': typeof PlatformDebugIndexRoute
   '/platform/etablissements/': typeof PlatformEtablissementsIndexRoute
+  '/platform/groupes/': typeof PlatformGroupesIndexRoute
   '/platform/roles/': typeof PlatformRolesIndexRoute
   '/platform/utilisateurs/': typeof PlatformUtilisateursIndexRoute
   '/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
@@ -1345,7 +1359,6 @@ export interface FileRoutesByTo {
   '/platform/dashboard': typeof PlatformDashboardRoute
   '/platform/factures': typeof PlatformFacturesRoute
   '/platform/fonctionnalites': typeof PlatformFonctionnalitesRoute
-  '/platform/groupes': typeof PlatformGroupesRoute
   '/platform/modules': typeof PlatformModulesRoute
   '/platform/monitoring': typeof PlatformMonitoringRoute
   '/platform/notifications-config': typeof PlatformNotificationsConfigRoute
@@ -1404,6 +1417,7 @@ export interface FileRoutesByTo {
   '/platform/debug/entitlements': typeof PlatformDebugEntitlementsRoute
   '/platform/debug/features': typeof PlatformDebugFeaturesRoute
   '/platform/etablissements/$id': typeof PlatformEtablissementsIdRoute
+  '/platform/groupes/$id': typeof PlatformGroupesIdRoute
   '/platform/roles/$id': typeof PlatformRolesIdRoute
   '/platform/utilisateurs/$id': typeof PlatformUtilisateursIdRoute
   '/annees-scolaires': typeof AuthAnneesScolairesIndexRoute
@@ -1433,6 +1447,7 @@ export interface FileRoutesByTo {
   '/e/$code': typeof ECodeIndexRoute
   '/platform/debug': typeof PlatformDebugIndexRoute
   '/platform/etablissements': typeof PlatformEtablissementsIndexRoute
+  '/platform/groupes': typeof PlatformGroupesIndexRoute
   '/platform/roles': typeof PlatformRolesIndexRoute
   '/platform/utilisateurs': typeof PlatformUtilisateursIndexRoute
   '/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
@@ -1521,7 +1536,7 @@ export interface FileRoutesById {
   '/platform/etablissements': typeof PlatformEtablissementsRouteWithChildren
   '/platform/factures': typeof PlatformFacturesRoute
   '/platform/fonctionnalites': typeof PlatformFonctionnalitesRoute
-  '/platform/groupes': typeof PlatformGroupesRoute
+  '/platform/groupes': typeof PlatformGroupesRouteWithChildren
   '/platform/modules': typeof PlatformModulesRoute
   '/platform/monitoring': typeof PlatformMonitoringRoute
   '/platform/notifications-config': typeof PlatformNotificationsConfigRoute
@@ -1588,6 +1603,7 @@ export interface FileRoutesById {
   '/platform/debug/entitlements': typeof PlatformDebugEntitlementsRoute
   '/platform/debug/features': typeof PlatformDebugFeaturesRoute
   '/platform/etablissements/$id': typeof PlatformEtablissementsIdRoute
+  '/platform/groupes/$id': typeof PlatformGroupesIdRoute
   '/platform/roles/$id': typeof PlatformRolesIdRoute
   '/platform/utilisateurs/$id': typeof PlatformUtilisateursIdRoute
   '/_auth/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
@@ -1617,6 +1633,7 @@ export interface FileRoutesById {
   '/e/$code/': typeof ECodeIndexRoute
   '/platform/debug/': typeof PlatformDebugIndexRoute
   '/platform/etablissements/': typeof PlatformEtablissementsIndexRoute
+  '/platform/groupes/': typeof PlatformGroupesIndexRoute
   '/platform/roles/': typeof PlatformRolesIndexRoute
   '/platform/utilisateurs/': typeof PlatformUtilisateursIndexRoute
   '/(authenticated)/parametres/structure-academique/cycles': typeof authenticatedParametresStructureAcademiqueCyclesRoute
@@ -1772,6 +1789,7 @@ export interface FileRouteTypes {
     | '/platform/debug/entitlements'
     | '/platform/debug/features'
     | '/platform/etablissements/$id'
+    | '/platform/groupes/$id'
     | '/platform/roles/$id'
     | '/platform/utilisateurs/$id'
     | '/annees-scolaires/'
@@ -1801,6 +1819,7 @@ export interface FileRouteTypes {
     | '/e/$code/'
     | '/platform/debug/'
     | '/platform/etablissements/'
+    | '/platform/groupes/'
     | '/platform/roles/'
     | '/platform/utilisateurs/'
     | '/parametres/structure-academique/cycles'
@@ -1860,7 +1879,6 @@ export interface FileRouteTypes {
     | '/platform/dashboard'
     | '/platform/factures'
     | '/platform/fonctionnalites'
-    | '/platform/groupes'
     | '/platform/modules'
     | '/platform/monitoring'
     | '/platform/notifications-config'
@@ -1919,6 +1937,7 @@ export interface FileRouteTypes {
     | '/platform/debug/entitlements'
     | '/platform/debug/features'
     | '/platform/etablissements/$id'
+    | '/platform/groupes/$id'
     | '/platform/roles/$id'
     | '/platform/utilisateurs/$id'
     | '/annees-scolaires'
@@ -1948,6 +1967,7 @@ export interface FileRouteTypes {
     | '/e/$code'
     | '/platform/debug'
     | '/platform/etablissements'
+    | '/platform/groupes'
     | '/platform/roles'
     | '/platform/utilisateurs'
     | '/parametres/structure-academique/cycles'
@@ -2102,6 +2122,7 @@ export interface FileRouteTypes {
     | '/platform/debug/entitlements'
     | '/platform/debug/features'
     | '/platform/etablissements/$id'
+    | '/platform/groupes/$id'
     | '/platform/roles/$id'
     | '/platform/utilisateurs/$id'
     | '/_auth/annees-scolaires/'
@@ -2131,6 +2152,7 @@ export interface FileRouteTypes {
     | '/e/$code/'
     | '/platform/debug/'
     | '/platform/etablissements/'
+    | '/platform/groupes/'
     | '/platform/roles/'
     | '/platform/utilisateurs/'
     | '/(authenticated)/parametres/structure-academique/cycles'
@@ -2741,6 +2763,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformRolesIndexRouteImport
       parentRoute: typeof PlatformRolesRoute
     }
+    '/platform/groupes/': {
+      id: '/platform/groupes/'
+      path: '/'
+      fullPath: '/platform/groupes/'
+      preLoaderRoute: typeof PlatformGroupesIndexRouteImport
+      parentRoute: typeof PlatformGroupesRoute
+    }
     '/platform/etablissements/': {
       id: '/platform/etablissements/'
       path: '/'
@@ -2943,6 +2972,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/roles/$id'
       preLoaderRoute: typeof PlatformRolesIdRouteImport
       parentRoute: typeof PlatformRolesRoute
+    }
+    '/platform/groupes/$id': {
+      id: '/platform/groupes/$id'
+      path: '/$id'
+      fullPath: '/platform/groupes/$id'
+      preLoaderRoute: typeof PlatformGroupesIdRouteImport
+      parentRoute: typeof PlatformGroupesRoute
     }
     '/platform/etablissements/$id': {
       id: '/platform/etablissements/$id'
@@ -4066,6 +4102,20 @@ const PlatformEtablissementsRouteWithChildren =
     PlatformEtablissementsRouteChildren,
   )
 
+interface PlatformGroupesRouteChildren {
+  PlatformGroupesIdRoute: typeof PlatformGroupesIdRoute
+  PlatformGroupesIndexRoute: typeof PlatformGroupesIndexRoute
+}
+
+const PlatformGroupesRouteChildren: PlatformGroupesRouteChildren = {
+  PlatformGroupesIdRoute: PlatformGroupesIdRoute,
+  PlatformGroupesIndexRoute: PlatformGroupesIndexRoute,
+}
+
+const PlatformGroupesRouteWithChildren = PlatformGroupesRoute._addFileChildren(
+  PlatformGroupesRouteChildren,
+)
+
 interface PlatformRolesRouteChildren {
   PlatformRolesIdRoute: typeof PlatformRolesIdRoute
   PlatformRolesIndexRoute: typeof PlatformRolesIndexRoute
@@ -4105,7 +4155,7 @@ interface PlatformRouteChildren {
   PlatformEtablissementsRoute: typeof PlatformEtablissementsRouteWithChildren
   PlatformFacturesRoute: typeof PlatformFacturesRoute
   PlatformFonctionnalitesRoute: typeof PlatformFonctionnalitesRoute
-  PlatformGroupesRoute: typeof PlatformGroupesRoute
+  PlatformGroupesRoute: typeof PlatformGroupesRouteWithChildren
   PlatformModulesRoute: typeof PlatformModulesRoute
   PlatformMonitoringRoute: typeof PlatformMonitoringRoute
   PlatformNotificationsConfigRoute: typeof PlatformNotificationsConfigRoute
@@ -4133,7 +4183,7 @@ const PlatformRouteChildren: PlatformRouteChildren = {
   PlatformEtablissementsRoute: PlatformEtablissementsRouteWithChildren,
   PlatformFacturesRoute: PlatformFacturesRoute,
   PlatformFonctionnalitesRoute: PlatformFonctionnalitesRoute,
-  PlatformGroupesRoute: PlatformGroupesRoute,
+  PlatformGroupesRoute: PlatformGroupesRouteWithChildren,
   PlatformModulesRoute: PlatformModulesRoute,
   PlatformMonitoringRoute: PlatformMonitoringRoute,
   PlatformNotificationsConfigRoute: PlatformNotificationsConfigRoute,

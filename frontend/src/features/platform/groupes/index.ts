@@ -6,10 +6,8 @@
 
 export * from './types';
 export * from './use-groupes-saas';
-export { GroupeStats } from './GroupeStats';
-export { GroupeCard } from './GroupeCard';
 export { GroupeFormModal } from './GroupeFormModal';
-export { GroupeConfigureModal } from './GroupeConfigureModal';
+export { PlatformGroupeDetailPage } from './PlatformGroupeDetailPage';
 export { MembresTab } from './tabs/MembresTab';
 export { ModulesTab } from './tabs/ModulesTab';
 export { PromotionsTab } from './tabs/PromotionsTab';

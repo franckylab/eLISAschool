@@ -120,6 +120,64 @@ export class GroupeSaaSService {
         });
     }
 
+    async getGroupesPaginated(params: {
+        actif?: boolean;
+        search?: string;
+        filtreStatut?: 'actif' | 'inactif';
+        filtreRemise?: 'avec' | 'sans';
+        sortBy?: string;
+        sortOrder?: 'ASC' | 'DESC';
+        page?: number;
+        limit?: number;
+    }): Promise<{ items: GroupeEtablissement[]; total: number; page: number; limit: number; totalPages: number }> {
+        const { actif, search, filtreStatut, filtreRemise, sortBy = 'nom', sortOrder = 'ASC', page = 1, limit = 20 } = params;
+
+        const qb = this.groupeRepo.createQueryBuilder('g')
+            .leftJoinAndSelect('g.etablissements', 'etablissements')
+            .leftJoinAndSelect('etablissements.etablissement', 'etablissement')
+            .where(actif === undefined ? '1=1' : 'g.actif = :actif', { actif: actif ?? true });
+
+        if (search) {
+            const searchTerm = `%${search.toLowerCase()}%`;
+            qb.andWhere('(LOWER(g.nom) LIKE :search OR LOWER(g.code) LIKE :search OR LOWER(g.description) LIKE :search)', { search: searchTerm });
+        }
+
+        if (filtreStatut === 'actif') qb.andWhere('g.actif = true');
+        else if (filtreStatut === 'inactif') qb.andWhere('g.actif = false');
+
+        const allowedSort = ['nom', 'code', 'membres', 'statut', 'date', 'remise'];
+        const safeSortBy = allowedSort.includes(sortBy) ? sortBy : 'nom';
+        const safeSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+        if (safeSortBy === 'membres') {
+            qb.leftJoin('g.etablissements', 'e_membres').addSelect('COUNT(e_membres.id)', 'membresCount');
+        } else if (safeSortBy === 'remise') {
+            // Note: remise depends on barème which is computed per groupe, we can't easily sort by it in DB
+            // Fallback to nom for now
+            qb.orderBy('g.nom', safeSortOrder);
+        } else if (safeSortBy === 'statut') {
+            qb.orderBy('g.actif', safeSortOrder);
+        } else if (safeSortBy === 'date') {
+            qb.orderBy('g.creeAt', safeSortOrder);
+        } else {
+            qb.orderBy(`g.${safeSortBy}`, safeSortOrder);
+        }
+
+        const total = await qb.getCount();
+
+        qb.skip((page - 1) * limit).take(limit);
+
+        const items = await qb.getMany();
+
+        return {
+            items,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+
     async updateGroupe(groupeId: string, data: Partial<{
         nom: string;
         description: string;

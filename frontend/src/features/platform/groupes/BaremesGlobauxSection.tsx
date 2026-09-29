@@ -101,7 +101,8 @@ function BaremesGlobalModal({
 }) {
     const { t } = useTranslation('admin');
     const global = useBaremesGlobal();
-    const { data: tousGroupes = [] } = useGroupesSaaS();
+    const { data: tousGroupesData } = useGroupesSaaS({ limit: 1000 });
+    const tousGroupes = Array.isArray(tousGroupesData) ? tousGroupesData : (tousGroupesData?.items ?? []);
     const saveGlobal = useSaveBaremesGlobal();
     const [confirmSave, setConfirmSave] = useState(false);
 

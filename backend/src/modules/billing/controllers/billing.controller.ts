@@ -1552,15 +1552,33 @@ clientBillingRouter.get('/cycles', authMiddleware, async (_req: Request, res: Re
 
 /**
  * GET /api/platform/facturation/groupes
- * Liste tous les groupes d'établissements
+ * Liste tous les groupes d'établissements (paginé, filtres, tri serveur)
+ * Query params: actif, search, filtreStatut, filtreRemise, sortBy, sortOrder, page, limit
  */
 platformBillingRouter.get('/groupes', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const actif = req.query.actif === undefined
             ? undefined
             : req.query.actif === 'true';
-        const groupes = await groupeSaaSService.getAllGroupes(actif);
-        res.json({ success: true, data: groupes });
+        const search = req.query.search as string | undefined;
+        const filtreStatut = req.query.filtreStatut as 'actif' | 'inactif' | undefined;
+        const filtreRemise = req.query.filtreRemise as 'avec' | 'sans' | undefined;
+        const sortBy = req.query.sortBy as string | undefined;
+        const sortOrder = req.query.sortOrder as 'ASC' | 'DESC' | undefined;
+        const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+
+        const result = await groupeSaaSService.getGroupesPaginated({
+            actif,
+            search,
+            filtreStatut,
+            filtreRemise,
+            sortBy,
+            sortOrder,
+            page,
+            limit,
+        });
+        res.json({ success: true, data: result.items, meta: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } });
     } catch (error) { next(error); }
 });
 

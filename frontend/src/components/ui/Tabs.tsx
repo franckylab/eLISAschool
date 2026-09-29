@@ -266,11 +266,11 @@ export function TabsBar({
                         </div>
                     )}
                     <div className="min-w-0">
-                        <h2 className="text-[var(--text-sm)] font-semibold text-[var(--color-texte)] dark:text-[var(--color-texte)] leading-tight">
+                        <h2 className="text-sm font-semibold text-[var(--color-texte)] dark:text-[var(--color-texte)] leading-tight">
                             {currentTab.label}
                         </h2>
                         {currentTab.description && (
-                            <p className="text-[var(--text-xs)] text-[var(--color-texte-secondaire)] mt-0.5 leading-relaxed">
+                            <p className="text-xs text-[var(--color-texte-secondaire)] mt-0.5 leading-relaxed">
                                 {currentTab.description}
                             </p>
                         )}

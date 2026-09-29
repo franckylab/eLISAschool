@@ -10,7 +10,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BadgePercent, ArrowRight, Info, Plus, X } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
@@ -19,49 +19,23 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type { GroupeSaaS } from '../types';
+import { usePromotionsGroupe, type PromotionGroupe } from '../use-groupes-saas';
 
-interface PromotionGroupe {
-    id: string;
-    code: string;
-    nom: string;
-    typePromotion: 'POURCENTAGE' | 'MONTANT_FIXE' | 'GRATUITE';
-    valeur: number;
-    scope: string;
-    cibleId?: string | null;
-    conditions?: { groupeIds?: string[]; nombreMembresMin?: number } | null;
-    actif: boolean;
-}
-
-function formaterValeur(p: { typePromotion: string; valeur: number }): string {
-    if (p.typePromotion === 'POURCENTAGE') return `${p.valeur}%`;
-    if (p.typePromotion === 'GRATUITE') return 'Gratuité';
-    return `${Number(p.valeur).toLocaleString('fr-FR')} XAF`;
-}
-
-function usePromotionsGroupe() {
-    return useQuery({
-        queryKey: ['promotions', { scope: 'GROUPE', actif: true }],
-        queryFn: async (): Promise<PromotionGroupe[]> => {
-            const res = await apiClient.get<unknown>(
-                '/api/platform/facturation/promotions',
-                { scope: 'GROUPE', actif: true, limit: 100 },
-            );
-            const payload = res.data as unknown;
-            if (Array.isArray(payload)) return payload as PromotionGroupe[];
-            if (payload && typeof payload === 'object' && Array.isArray((payload as { data?: unknown }).data)) {
-                return (payload as { data: PromotionGroupe[] }).data;
-            }
-            return [];
-        },
-        staleTime: 30_000,
-        retry: 1,
-    });
+/** Formateur de valeur localisé (POURCENTAGE / GRATUITE / montant XAF). */
+function useFormaterValeur(): (p: { typePromotion: string; valeur: number }) => string {
+    const { t } = useTranslation('admin');
+    return (p) => {
+        if (p.typePromotion === 'POURCENTAGE') return `${p.valeur}%`;
+        if (p.typePromotion === 'GRATUITE') return t('groupes.promotions.gratuite', 'Gratuité');
+        return `${Number(p.valeur).toLocaleString('fr-FR')} XAF`;
+    };
 }
 
 export function PromotionsTab({ groupe }: { groupe: GroupeSaaS }) {
     const { t } = useTranslation('admin');
     const navigate = useNavigate();
     const qc = useQueryClient();
+    const formaterValeur = useFormaterValeur();
     const { data: promotions = [], isLoading, isError, refetch } = usePromotionsGroupe();
 
     const { assignees, disponibles } = useMemo(() => {

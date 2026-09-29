@@ -117,7 +117,7 @@ export function BaremesTab({ groupe }: BaremesTabProps) {
                             {config.paliers.map((p) => (
                                 <li key={p.minMembres} className="flex justify-between tabular-nums">
                                     <span className="text-[var(--color-texte-secondaire)]">
-                                        ≥ {p.minMembres} {t('groupes.membres')}
+                                        ≥ {p.minMembres} {t('groupes.membresLabel', 'membres')}
                                     </span>
                                     <strong className="text-[var(--color-texte)]">−{p.remisePct}%</strong>
                                 </li>

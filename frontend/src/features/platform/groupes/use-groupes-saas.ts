@@ -17,7 +17,6 @@ import type {
     GroupeSaaS,
     ModuleCatalogueOption,
     ModuleGroupeOverride,
-    PromotionApercu,
 } from './types';
 
 const BASE = '/api/platform/facturation/groupes';
@@ -30,7 +29,6 @@ export const GROUPES_SAAS_KEYS = {
     modules: (id: string) => ['groupes-saas-modules', id] as const,
     catalogue: ['groupes-saas-catalogue'] as const,
     stats: (id: string) => ['groupes-saas-stats', id] as const,
-    promotionsPlan: ['groupes-saas-promotions-plan'] as const,
 };
 
 function messageErreur(erreur: unknown, repli: string): string {
@@ -43,14 +41,65 @@ function messageErreur(erreur: unknown, repli: string): string {
 
 // ─── Groupes ─────────────────────────────────────────────────────
 
-export function useGroupesSaaS(actif?: boolean) {
+export interface GroupeSaaSListParams {
+    actif?: boolean;
+    search?: string;
+    filtreStatut?: 'actif' | 'inactif';
+    filtreRemise?: 'avec' | 'sans';
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    page?: number;
+    limit?: number;
+}
+
+export interface PaginatedResult<T> {
+    items: T[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export function useGroupesSaaS(params: GroupeSaaSListParams = {}) {
+    const { actif, search, filtreStatut, filtreRemise, sortBy, sortOrder, page, limit } = params;
     return useQuery({
-        queryKey: GROUPES_SAAS_KEYS.list(actif),
-        queryFn: async (): Promise<GroupeSaaS[]> => {
-            const params: Record<string, string> = {};
-            if (actif !== undefined) params.actif = String(actif);
-            const res = await apiClient.get<GroupeSaaS[]>(BASE, Object.keys(params).length ? params : undefined);
-            return res.data ?? [];
+        queryKey: ['groupes-saas', 'list', params],
+        queryFn: async (): Promise<PaginatedResult<GroupeSaaS>> => {
+            const queryParams: Record<string, string> = {};
+            if (actif !== undefined) queryParams.actif = String(actif);
+            if (search) queryParams.search = search;
+            if (filtreStatut) queryParams.filtreStatut = filtreStatut;
+            if (filtreRemise) queryParams.filtreRemise = filtreRemise;
+            if (sortBy) queryParams.sortBy = sortBy;
+            if (sortOrder) queryParams.sortOrder = sortOrder;
+            if (page) queryParams.page = String(page);
+            if (limit) queryParams.limit = String(limit);
+            // Le backend renvoie { success, data: GroupeSaaS[], meta: {...} } :
+            // data est un TABLEAU, pas un PaginatedResult. Normaliser ici pour
+            // que tous les consommateurs (.items) reçoivent toujours une forme valide.
+            const res = await apiClient.get<unknown>(BASE, queryParams);
+            const body = res as { data?: unknown; meta?: { total?: number; page?: number; limit?: number; totalPages?: number } };
+            const rawData = body?.data;
+            const items: GroupeSaaS[] = Array.isArray(rawData)
+                ? (rawData as GroupeSaaS[])
+                : Array.isArray((rawData as { items?: unknown })?.items)
+                    ? ((rawData as { items: GroupeSaaS[] }).items)
+                    : [];
+            const metaSrc = body?.meta ?? (rawData as { meta?: typeof body.meta })?.meta;
+            const pageNum = page ?? metaSrc?.page ?? 1;
+            const limitNum = limit ?? metaSrc?.limit ?? items.length;
+            const total = metaSrc?.total ?? items.length;
+            return {
+                items,
+                meta: {
+                    total,
+                    page: metaSrc?.page ?? pageNum,
+                    limit: metaSrc?.limit ?? limitNum,
+                    totalPages: metaSrc?.totalPages ?? Math.max(1, Math.ceil(total / Math.max(1, limitNum))),
+                },
+            };
         },
         staleTime: 30_000,
         retry: 1,
@@ -242,24 +291,36 @@ export function useGroupesStats(groupeId: string | null) {
     });
 }
 
-// ─── Promotions (lecture seule — périmètre global, pas lié au groupe) ──
+// ─── Promotions scope=GROUPE (assignation non destructive) ──────────
 
-export function usePromotionsPlanActives() {
+export interface PromotionGroupe {
+    id: string;
+    code: string;
+    nom: string;
+    typePromotion: 'POURCENTAGE' | 'MONTANT_FIXE' | 'GRATUITE';
+    valeur: number;
+    scope: string;
+    cibleId?: string | null;
+    conditions?: { groupeIds?: string[]; nombreMembresMin?: number } | null;
+    actif: boolean;
+}
+
+export function usePromotionsGroupe() {
     return useQuery({
-        queryKey: GROUPES_SAAS_KEYS.promotionsPlan,
-        queryFn: async (): Promise<PromotionApercu[]> => {
-            const res = await apiClient.get<{ data?: PromotionApercu[] } | PromotionApercu[]>(
+        queryKey: ['promotions', { scope: 'GROUPE', actif: true }],
+        queryFn: async (): Promise<PromotionGroupe[]> => {
+            const res = await apiClient.get<unknown>(
                 '/api/platform/facturation/promotions',
-                { scope: 'PLAN', actif: true },
+                { scope: 'GROUPE', actif: true, limit: 100 },
             );
-            const raw = res.data as unknown;
-            if (Array.isArray(raw)) return raw;
-            if (raw && typeof raw === 'object' && Array.isArray((raw as { data?: PromotionApercu[] }).data)) {
-                return (raw as { data?: PromotionApercu[] }).data ?? [];
+            const payload = res.data as unknown;
+            if (Array.isArray(payload)) return payload as PromotionGroupe[];
+            if (payload && typeof payload === 'object' && Array.isArray((payload as { data?: unknown }).data)) {
+                return (payload as { data: PromotionGroupe[] }).data;
             }
             return [];
         },
-        staleTime: 60_000,
+        staleTime: 30_000,
         retry: 1,
     });
 }
